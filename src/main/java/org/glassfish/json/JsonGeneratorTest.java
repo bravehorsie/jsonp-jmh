@@ -60,26 +60,75 @@ public class JsonGeneratorTest {
 
     @Setup(Level.Trial)
     public void setup() {
+        /*
+        this method runs only once per thread before warm up so it is still strange
+        but if direct instantiation is used instead of service loader
+        than performance problem goes away. Maybe it has something to do with
+        initialized ThreadLocal introduced with https://java.net/jira/browse/JSONP-26
+        */
+//        provider = new JsonProviderImpl();
+
         provider = JsonProvider.provider();
     }
 
     @Benchmark
-    public void test1JsonbStringWriter(Blackhole bh) {
-        StringWriter jsonbWriter = new StringWriter();
-        JsonGenerator jsonbGenerator = provider.createGenerator(jsonbWriter);
+    public void test1writePair(Blackhole bh) {
+        StringWriter stringWriter = new StringWriter();
+        JsonGenerator jsonGenerator = provider.createGenerator(stringWriter);
 
-        jsonbGenerator.writeStartObject();
-        jsonbGenerator.write("val1", "str1");
-        jsonbGenerator.write("val2", "str2");
-        jsonbGenerator.write("val3", "str3");
-        jsonbGenerator.write("val4", "str4");
-        jsonbGenerator.write("val5", "str5");
-        jsonbGenerator.writeEnd();
-        jsonbGenerator.flush();
-        jsonbGenerator.close();
+        jsonGenerator.writeStartObject();
+        jsonGenerator.write("val1", "str1");
+        jsonGenerator.write("val2", "str2");
+        jsonGenerator.write("val3", "str3");
+        jsonGenerator.write("val4", "str4");
+        jsonGenerator.write("val5", "str5");
+        jsonGenerator.writeEnd();
+        jsonGenerator.flush();
+        jsonGenerator.close();
 
-        final String result = jsonbWriter.toString();
+        final String result = stringWriter.toString();
         bh.consume(result);
     }
+
+    @Benchmark
+    public void test2writeArrayValues() {
+        StringWriter stringWriter = new StringWriter();
+        JsonGenerator jsonGenerator = provider.createGenerator(stringWriter);
+
+        jsonGenerator.writeStartArray();
+        jsonGenerator.write("str0");
+        jsonGenerator.write("str1");
+        jsonGenerator.write("str2");
+        jsonGenerator.write("str3");
+        jsonGenerator.write("str4");
+        jsonGenerator.writeEnd();
+
+        jsonGenerator.flush();
+        jsonGenerator.close();
+    }
+
+    /*
+
+    @Benchmark
+    public void test3writeKeyAndValue() {
+        StringWriter stringWriter = new StringWriter();
+        JsonGenerator jsonGenerator = provider.createGenerator(stringWriter);
+
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeKey("key0");
+        jsonGenerator.write("str0");
+        jsonGenerator.writeKey("key1");
+        jsonGenerator.write("str1");
+        jsonGenerator.writeKey("key2");
+        jsonGenerator.write("str2");
+        jsonGenerator.writeKey("key3");
+        jsonGenerator.write("str3");
+        jsonGenerator.writeKey("key4");
+        jsonGenerator.write("str4");
+        jsonGenerator.writeEnd();
+
+        jsonGenerator.flush();
+        jsonGenerator.close();
+    }*/
 
 }
